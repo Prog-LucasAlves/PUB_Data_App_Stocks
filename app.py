@@ -19,5 +19,4 @@ st.title("DataApp Stock Analysis 📊")
 ################################
 # Construção do App - Sidebar
 ################################
-
 stock = st.sidebar.selectbox("Ticker", list_stock)
