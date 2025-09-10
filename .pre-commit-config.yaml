@@ -7,3 +7,7 @@ repos:
       -  id: trailing-whitespace
       -  id: check-toml
       -  id: requirements-txt-fixer
+  -   repo: https://github.com/asottile/add-trailing-comma
+      rev: v3.2.0
+      hooks:
+      -  id: add-trailing-comma
