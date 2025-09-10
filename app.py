@@ -4,6 +4,7 @@
 ################################
 import streamlit as st
 from list_stock import list_stock
+import pandas as pd
 
 ################################
 # Configuração da página
