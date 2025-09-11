@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 package-mode = false
 dependencies = [
+    "plotly>=6.3.0",
     "streamlit>=1.49.1",
     "yfinance>=0.2.65",
 ]
