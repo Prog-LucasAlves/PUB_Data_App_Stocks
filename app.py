@@ -10,7 +10,7 @@ import yfinance as yf
 # Coletando dados
 ################################
 def get_data(ticker: str, start, end):
-    data = yf.download(ticker, start=start, end=end)
+    data = yf.download(f"{ticker}.SA", start=start, end=end, auto_adjust=False, progress=False, multi_level_index=False)
     return data
 
 ################################
