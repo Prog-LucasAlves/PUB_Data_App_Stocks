@@ -80,16 +80,26 @@ fig_line.add_trace(
     go.Scatter(
         x=[date_max], y=[data_max], mode='markers+text', name='Biggest High',
         marker=dict(symbol="circle", size=10, color="#54A24B"),
+        text=[f"R$ {data_max:.2f}"], textposition="bottom center",
+        textfont=dict(color="white", size=15),
     ),
 )
 fig_line.add_trace(
     go.Scatter(
         x=[date_min], y=[data_min], mode='markers+text', name='Biggest Low',
         marker=dict(symbol="circle", size=10, color="#B82E2E"),
+        text=[f"R$ {data_min:.2f}"], textposition="top center",
+        textfont=dict(color="white", size=15),
     ),
 )
 fig_line.update_layout(
-    title=f"{stock} Adjusted Close Price", xaxis_title="Date",
-    yaxis_tickformat=".2f", yaxis_title="Price (BRL)",
+    title=f"{stock} Adjusted Close Price",
+    title_font=dict(size=24),
+    xaxis_title="Date", xaxis_title_font=dict(size=15),
+    xaxis=dict(tickfont=dict(size=15)),
+    yaxis_tickprefix="R$ ", yaxis_tickformat=".2f", yaxis_title="Price (BRL)",
+    yaxis_title_font=dict(size=15),
+    yaxis=dict(tickfont=dict(size=15)),
+    legend=dict(font=dict(size=18)),
 )
 st.plotly_chart(fig_line)
