@@ -5,6 +5,7 @@
 import streamlit as st
 from list_stock import list_stock
 import yfinance as yf
+import plotly.graph_objects as go
 
 ################################
 # Coletando dados
