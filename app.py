@@ -50,3 +50,7 @@ st.dataframe(
         "Volume": "{:.0f}",
     }), use_container_width=True,
 )
+
+# Botão de download dos dados
+csv = data.to_csv().encode('utf-8')
+st.download_button(label="Download Data as CSV", data=csv, file_name=f'{stock}.csv', mime='text/csv')
