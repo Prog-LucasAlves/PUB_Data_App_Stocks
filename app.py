@@ -30,7 +30,10 @@ stock = st.sidebar.selectbox("Ticker", list_stock)
 start = st.sidebar.date_input("Start Date", value=None)
 end = st.sidebar.date_input("End Date", value=None)
 
+st.sidebar.markdown("---")
+
 ################################
 # Construção do App - Main
 ################################
-get_data(stock, start, end)
+data = get_data(stock, start, end)
+st.dataframe(data)
