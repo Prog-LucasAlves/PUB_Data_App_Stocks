@@ -2,8 +2,8 @@
 
 - Um aplicativo Streamlit interativo para visualização e análise de dados do mercado de ações.
 
-# 📋 Índice
+## 📋 Índice
 
 - [Visão Geral](#-visão-geral)
 
-# 🎯 Visão Geral
+## 🎯 Visão Geral
