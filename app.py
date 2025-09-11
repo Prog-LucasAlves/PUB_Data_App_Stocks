@@ -11,6 +11,13 @@ import plotly.graph_objects as go
 # Coletando dados
 ################################
 def get_data(ticker: str, start, end):
+    """
+    Function to get stock data from Yahoo Finance
+    :param ticker: Stock ticker symbol
+    :param start: Start date
+    :param end: End date
+    :return: DataFrame with stock data
+    """
     data = yf.download(f"{ticker}.SA", start=start, end=end, auto_adjust=False, progress=False, multi_level_index=False)
     return data
 
@@ -55,12 +62,30 @@ st.dataframe(
 csv = data.to_csv().encode('utf-8')
 st.download_button(label="Download Data as CSV", data=csv, file_name=f'{stock}.csv', mime='text/csv')
 
+# Coletando valores máximo e mínimo
+data_max = data['Adj Close'].max()
+date_max = data[data["Adj Close"] == data_max].index[0]
+data_min = data['Adj Close'].min()
+date_min = data[data["Adj Close"] == data_min].index[0]
+
 # Gráfico de linhas - Preço Ajustado
 fig_line = go.Figure()
 fig_line.add_trace(
     go.Scatter(
         x=data.index, y=data['Adj Close'], mode='lines', name='Adj Close',
-        line=dict(color='green', width=2, shape='spline'),
+        line=dict(color='#1F77B4', width=2, shape='spline'),
+    ),
+)
+fig_line.add_trace(
+    go.Scatter(
+        x=[date_max], y=[data_max], mode='markers+text', name='Biggest High',
+        marker=dict(symbol="circle", size=10, color="#54A24B"),
+    ),
+)
+fig_line.add_trace(
+    go.Scatter(
+        x=[date_min], y=[data_min], mode='markers+text', name='Biggest Low',
+        marker=dict(symbol="circle", size=10, color="#B82E2E"),
     ),
 )
 fig_line.update_layout(
