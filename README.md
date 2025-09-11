@@ -5,5 +5,6 @@
 ## 📋 Índice
 
 - [Visão Geral](#-visão-geral)
+- [Funcionalidades](#-funcionalidades)
 
 ## 🎯 Visão Geral
