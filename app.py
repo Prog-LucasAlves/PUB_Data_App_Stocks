@@ -39,5 +39,14 @@ st.sidebar.markdown("---")
 # Coletando dados
 data = get_data(stock, start, end)
 
-# Exibindo dados - DataFrame
-st.dataframe(data)
+# Formatando e exibindo os dados - DataFrame
+st.dataframe(
+    data.style.format({
+        "Open": "{:.2f}",
+        "High": "{:.2f}",
+        "Low": "{:.2f}",
+        "Close": "{:.2f}",
+        "Adj Close": "{:.2f}",
+        "Volume": "{:.0f}",
+    }), use_container_width=True,
+)
