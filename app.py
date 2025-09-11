@@ -5,6 +5,7 @@
 import streamlit as st
 from list_stock import list_stock
 import yfinance as yf
+import plotly.graph_objects as go
 
 ################################
 # Coletando dados
@@ -35,5 +36,8 @@ st.sidebar.markdown("---")
 ################################
 # Construção do App - Main
 ################################
+# Coletando dados
 data = get_data(stock, start, end)
+
+# Exibindo dados - DataFrame
 st.dataframe(data)
