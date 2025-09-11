@@ -36,5 +36,8 @@ st.sidebar.markdown("---")
 ################################
 # Construção do App - Main
 ################################
+# Coletando dados
 data = get_data(stock, start, end)
+
+# Exibindo dados - DataFrame
 st.dataframe(data)
