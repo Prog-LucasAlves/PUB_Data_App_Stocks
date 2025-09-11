@@ -54,3 +54,17 @@ st.dataframe(
 # Botão de download dos dados
 csv = data.to_csv().encode('utf-8')
 st.download_button(label="Download Data as CSV", data=csv, file_name=f'{stock}.csv', mime='text/csv')
+
+# Gráfico de linhas - Preço Ajustado
+fig_line = go.Figure()
+fig_line.add_trace(
+    go.Scatter(
+        x=data.index, y=data['Adj Close'], mode='lines', name='Adj Close',
+        line=dict(color='green', width=2, shape='spline'),
+    ),
+)
+fig_line.update_layout(
+    title=f"{stock} Adjusted Close Price", xaxis_title="Date",
+    yaxis_tickformat=".2f", yaxis_title="Price (BRL)",
+)
+st.plotly_chart(fig_line)
