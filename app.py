@@ -11,6 +11,13 @@ import plotly.graph_objects as go
 # Coletando dados
 ################################
 def get_data(ticker: str, start, end):
+    """
+    Function to get stock data from Yahoo Finance
+    :param ticker: Stock ticker symbol
+    :param start: Start date
+    :param end: End date
+    :return: DataFrame with stock data
+    """
     data = yf.download(f"{ticker}.SA", start=start, end=end, auto_adjust=False, progress=False, multi_level_index=False)
     return data
 
