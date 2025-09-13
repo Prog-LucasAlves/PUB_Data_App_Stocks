@@ -6,6 +6,7 @@ import streamlit as st
 from list_stock import list_stock
 import yfinance as yf
 import plotly.graph_objects as go
+import pandas as pd
 
 ################################
 # Coletando dados
@@ -36,9 +37,14 @@ st.title("DataApp Stock Analysis 📊")
 ################################
 stock = st.sidebar.selectbox("Ticker", list_stock)
 start = st.sidebar.date_input("Start Date", value=None)
-end = st.sidebar.date_input("End Date", value=None)
+today = pd.to_datetime("today").date()
+end = st.sidebar.date_input("End Date", value=today, max_value=today)
 
 st.sidebar.markdown("---")
+
+moving_average = st.sidebar.checkbox("Show Moving Average", value=False)
+if moving_average:
+    ma_window = st.sidebar.slider("Moving Average Window", min_value=5, max_value=100, value=20, step=5)
 
 ################################
 # Construção do App - Main
@@ -67,6 +73,10 @@ data_max = data['Adj Close'].max()
 date_max = data[data["Adj Close"] == data_max].index[0]
 data_min = data['Adj Close'].min()
 date_min = data[data["Adj Close"] == data_min].index[0]
+
+# Media Móvel
+if moving_average:
+    data['MA'] = data['Close'].rolling(window=ma_window).mean()
 
 # Calculos
 annual_return = (data['Adj Close'][-1] / data['Adj Close'][0]) ** (252 / len(data)) - 1
@@ -127,7 +137,7 @@ with col1:
 with col2:
     # Métricas
     st.subheader("Key Metrics")
-    col_a, col_b, col_c = st.columns(3)
+    col_a, col_b, col_c, col_d = st.columns(4)
 
     with col_a:
         st.metric(label="Maximum Price (BRL)", value=f"R$ {data_max:.2f}", delta=f"on {date_max.date()}")
@@ -146,5 +156,41 @@ with col2:
         st.metric(label="Max Drawdown", value=f"{max_drawdown*100:.2f} %")
         st.metric(label="Omega Ratio", value=f"{omega_ratio:.2f}")
         st.metric(label="Sortino Ratio", value=f"{sortino_ratio:.2f}")
+    with col_d:
+        st.metric(label="Skewness", value=f"{skewness:.2f}")
+        st.metric(label="Kurtosis", value=f"{kurtosis:.2f}")
+        st.metric(label="Beta", value=f"{beta:.2f}")
 
 st.markdown("---")
+
+# Gráfico de Candles - Preço Ajustado
+fig_candle = go.Figure()
+fig_candle.add_trace(
+    go.Candlestick(
+        x=data.index, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'],
+        name='Candlestick', increasing_line_color='#54A24B', decreasing_line_color='#B82E2E',
+    ),
+)
+if moving_average:
+    fig_candle.add_trace(
+        go.Scatter(
+            x=data.index, y=data['MA'], mode='lines', name='Moving Average',
+            line=dict(color='#1F77B4', width=2, shape='spline'),
+        ),
+    )
+fig_candle.update_layout(
+    title=f'{stock} Gráfico de Candlestick', title_font=dict(size=24),
+    xaxis_rangeslider_visible=False,
+    xaxis_title="Date", xaxis_title_font=dict(size=15),
+    xaxis=dict(
+        type='date',
+    ),
+)
+date_all = pd.date_range(start=data.index[0], end=data.index[-1], freq='D')
+date_all_py = [d.to_pydatetime() for d in date_all]
+date_all_obs = [d.to_pydatetime() for d in data.index]
+date_all_braks = [d for d in date_all_py if d not in date_all_obs]
+fig_candle.update_xaxes(
+    rangebreaks=[dict(values=date_all_braks)],
+)
+st.plotly_chart(fig_candle)
