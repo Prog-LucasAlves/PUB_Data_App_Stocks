@@ -11,7 +11,7 @@ import pandas as pd
 ################################
 # Coletando dados
 ################################
-def get_data(ticker: str, start, end):
+def get_data_stock(ticker: str, start, end):
     """
     Function to get stock data from Yahoo Finance
     :param ticker: Stock ticker symbol
@@ -20,6 +20,17 @@ def get_data(ticker: str, start, end):
     :return: DataFrame with stock data
     """
     data = yf.download(f"{ticker}.SA", start=start, end=end, auto_adjust=False, progress=False, multi_level_index=False)
+    return data
+
+def get_data_benchmark(ticker: str, start, end):
+    """
+    Function to get benchmark data from Yahoo Finance
+    :param ticker: Benchmark ticker symbol
+    :param start: Start date
+    :param end: End date
+    :return: DataFrame with benchmark data
+    """
+    data = yf.download(f"{ticker}", start=start, end=end, auto_adjust=False, progress=False, multi_level_index=False)
     return data
 
 ################################
@@ -36,25 +47,27 @@ st.title("DataApp Stock Analysis 📊")
 # Construção do App - Sidebar
 ################################
 stock = st.sidebar.selectbox("Ticker", list_stock)
-start = st.sidebar.date_input("Start Date", value=None)
+start = st.sidebar.date_input("Start Date", value=pd.to_datetime("2025-01-01").date())
 today = pd.to_datetime("today").date()
 end = st.sidebar.date_input("End Date", value=today, max_value=today)
+benchmark = st.sidebar.selectbox("Benchmark", ["^BVSP", "^GSPC", "^IXIC", "^FTSE", "^N225", "^HSI", "GC=F", "CL=F", "EURUSD=X", "JPY=X", "BRL=X"])
 
 st.sidebar.markdown("---")
 
 moving_average = st.sidebar.checkbox("Show Moving Average", value=False)
 if moving_average:
-    ma_window = st.sidebar.slider("Moving Average Window", min_value=5, max_value=100, value=20, step=5)
+    ma_window = st.sidebar.slider("Moving Average Window", min_value=20, max_value=100, value=20, step=5)
 
 ################################
 # Construção do App - Main
 ################################
 # Coletando dados
-data = get_data(stock, start, end)
+dataStock = get_data_stock(stock, start, end)
+dataBenchmark = get_data_benchmark(benchmark, start, end)
 
 # Formatando e exibindo os dados - DataFrame
 st.dataframe(
-    data.style.format({
+    dataStock.style.format({
         "Open": "{:.2f}",
         "High": "{:.2f}",
         "Low": "{:.2f}",
@@ -65,33 +78,41 @@ st.dataframe(
 )
 
 # Botão de download dos dados
-csv = data.to_csv().encode('utf-8')
+csv = dataStock.to_csv().encode('utf-8')
 st.download_button(label="Download Data as CSV", data=csv, file_name=f'{stock}.csv', mime='text/csv')
 
 # Coletando valores máximo e mínimo
-data_max = data['Adj Close'].max()
-date_max = data[data["Adj Close"] == data_max].index[0]
-data_min = data['Adj Close'].min()
-date_min = data[data["Adj Close"] == data_min].index[0]
+data_max = dataStock['Adj Close'].max()
+date_max = dataStock[dataStock["Adj Close"] == data_max].index[0]
+data_min = dataStock['Adj Close'].min()
+date_min = dataStock[dataStock["Adj Close"] == data_min].index[0]
 
 # Media Móvel
 if moving_average:
-    data['MA'] = data['Close'].rolling(window=ma_window).mean()
+    dataStock['MA'] = dataStock['Close'].rolling(window=ma_window).mean()
+
+# Volatilidade
+dataStock['Volatility'] = dataStock['Adj Close'].pct_change().rolling(window=21).std() * (21 ** 0.5)
 
 # Calculos
-annual_return = (data['Adj Close'][-1] / data['Adj Close'][0]) ** (252 / len(data)) - 1
-cumulative_return = (data['Adj Close'][-1] / data['Adj Close'][0]) - 1
-annual_volatility = data['Adj Close'].pct_change().std() * (252 ** 0.5)
-mothly_volatility = data['Adj Close'].pct_change().std() * (21 ** 0.5)
+annual_return = (dataStock['Adj Close'][-1] / dataStock['Adj Close'][0]) ** (252 / len(dataStock)) - 1
+cumulative_return = (dataStock['Adj Close'][-1] / dataStock['Adj Close'][0]) - 1
+annual_volatility = dataStock['Adj Close'].pct_change().std() * (252 ** 0.5)
+mothly_volatility = dataStock['Adj Close'].pct_change().std() * (21 ** 0.5)
 sharpe_ratio = annual_return / annual_volatility
-calmar_ratio = annual_return / abs(data['Adj Close'].pct_change().min() * (252 ** 0.5))
-stability = (data['Adj Close'].mean() / data['Adj Close'].std())
-max_drawdown = (data['Adj Close'].cummax() - data['Adj Close']).max() / data['Adj Close'].cummax().max()
+calmar_ratio = annual_return / abs(dataStock['Adj Close'].pct_change().min() * (252 ** 0.5))
+stability = (dataStock['Adj Close'].mean() / dataStock['Adj Close'].std())
+max_drawdown = (dataStock['Adj Close'].cummax() - dataStock['Adj Close']).max() / dataStock['Adj Close'].cummax().max()
 omega_ratio = (annual_return / annual_volatility) / max_drawdown
-sortino_ratio = annual_return / (data['Adj Close'].pct_change()[data['Adj Close'].pct_change() < 0].std() * (252 ** 0.5))
-skewness = data['Adj Close'].pct_change().skew()
-kurtosis = data['Adj Close'].pct_change().kurtosis()
-beta = data['Adj Close'].pct_change().cov(data['Adj Close'].pct_change()) / data['Adj Close'].pct_change().var()
+sortino_ratio = annual_return / (dataStock['Adj Close'].pct_change()[dataStock['Adj Close'].pct_change() < 0].std() * (252 ** 0.5))
+skewness = dataStock['Adj Close'].pct_change().skew()
+kurtosis = dataStock['Adj Close'].pct_change().kurtosis()
+beta = (
+    dataStock['Adj Close'].pct_change().dropna().cov(
+    dataBenchmark['Adj Close'].pct_change().dropna(),
+    ) /
+        dataBenchmark['Adj Close'].pct_change().dropna().var()
+)
 
 # Crianddo colunas
 col1, col2 = st.columns(2)
@@ -102,7 +123,7 @@ with col1:
     fig_line = go.Figure()
     fig_line.add_trace(
         go.Scatter(
-            x=data.index, y=data['Adj Close'], mode='lines', name='Adj Close',
+            x=dataStock.index, y=dataStock['Adj Close'], mode='lines', name='Adj Close',
             line=dict(color='#1F77B4', width=2, shape='spline'),
         ),
     )
@@ -167,30 +188,57 @@ st.markdown("---")
 fig_candle = go.Figure()
 fig_candle.add_trace(
     go.Candlestick(
-        x=data.index, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'],
-        name='Candlestick', increasing_line_color='#54A24B', decreasing_line_color='#B82E2E',
+        x=dataStock.index, open=dataStock["Open"], high=dataStock["High"], low=dataStock["Low"], close=dataStock["Close"],
+        name="Candlestick", increasing_line_color="#54A24B", decreasing_line_color="#B82E2E",
     ),
 )
 if moving_average:
     fig_candle.add_trace(
         go.Scatter(
-            x=data.index, y=data['MA'], mode='lines', name='Moving Average',
-            line=dict(color='#1F77B4', width=2, shape='spline'),
+            x=dataStock.index, y=dataStock["MA"], mode="lines", name="Moving Average",
+            line=dict(color="#1F77B4", width=2, shape="spline"),
         ),
     )
 fig_candle.update_layout(
-    title=f'{stock} Gráfico de Candlestick', title_font=dict(size=24),
+    title=f"{stock} Candlestick Chart",
+    title_font=dict(size=24),
     xaxis_rangeslider_visible=False,
     xaxis_title="Date", xaxis_title_font=dict(size=15),
-    xaxis=dict(
-        type='date',
-    ),
+    xaxis=dict(type="date",tickfont=dict(size=15)),
+    yaxis_tickprefix="R$ ", yaxis_tickformat=".2f", yaxis_title="Price (BRL)",
+    yaxis_title_font=dict(size=15),
+    yaxis=dict(tickfont=dict(size=15)),
 )
-date_all = pd.date_range(start=data.index[0], end=data.index[-1], freq='D')
+date_all = pd.date_range(start=dataStock.index[0], end=dataStock.index[-1], freq="D")
 date_all_py = [d.to_pydatetime() for d in date_all]
-date_all_obs = [d.to_pydatetime() for d in data.index]
+date_all_obs = [d.to_pydatetime() for d in dataStock.index]
 date_all_braks = [d for d in date_all_py if d not in date_all_obs]
 fig_candle.update_xaxes(
     rangebreaks=[dict(values=date_all_braks)],
 )
 st.plotly_chart(fig_candle)
+
+# Crianddo colunas
+col1, col2 = st.columns(2)
+
+with col1:
+
+    # Gráfico de Volatilidade
+    fig_volatility = go.Figure()
+    fig_volatility.add_trace(
+        go.Scatter(
+            x=dataStock.index, y=round(dataStock["Volatility"] * 100, 2), mode="lines", name="Volatility",
+            line=dict(color="#FF7F0E", width=2, shape="spline"),
+        ),
+    )
+    fig_volatility.update_layout(
+    title=f"{stock} Annual Volatility",
+    title_font=dict(size=24),
+    xaxis_rangeslider_visible=False,
+    xaxis_title="Date", xaxis_title_font=dict(size=15),
+    xaxis=dict(type="date",tickfont=dict(size=15)),
+    yaxis_tickformat=".%", yaxis_title="Volatilidade (%)",
+    yaxis_title_font=dict(size=15),
+    yaxis=dict(tickfont=dict(size=15)),
+)
+    st.plotly_chart(fig_volatility)
